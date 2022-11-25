@@ -14,6 +14,7 @@ class Player
     int gravity = 1;
     float width = 50;
     float height = 50;
+    bool playJumpWav = false;
 
     void move()
     {
@@ -21,6 +22,7 @@ class Player
         {
             y -= jumpPower;
             velocity -= jumpPower;
+            playJumpWav = true;
         }
 
     }
@@ -81,11 +83,19 @@ int main()
     int score_starttime = time(NULL);
     
     InitWindow(window_width, window_height, "GAME");
+    InitAudioDevice();      
+
     //void SetWindowIcon(Image image);
 
     bool GameOver = false;
 
     int score = 0;
+
+    Sound jumpwav = LoadSound("sfx/jump.wav");
+    Sound deathwav = LoadSound("sfx/death.wav");
+
+    bool deathAudioPlayed = false;
+
 
     SetTargetFPS(60);
     while(!WindowShouldClose())
@@ -93,16 +103,27 @@ int main()
         BeginDrawing();
         ClearBackground(BLACK);
         
-        DrawRectangle(player.x, player.y, player.width, player.height, GREEN);
-        DrawRectangle(obstacle1.x, obstacle1.y, 40, 40, RED);
+        if(!GameOver){
+            DrawRectangle(player.x, player.y, player.width, player.height, GREEN);
+            DrawRectangle(obstacle1.x, obstacle1.y, 40, 40, RED);
+        }
 
         Rectangle p = {player.x, player.y, player.width, player.height};
         Rectangle e = {obstacle1.x, obstacle1.y, obstacle1.width, obstacle1.height};
 
-        if (CheckCollisionRecs(p, e) || GameOver){
+        if(CheckCollisionRecs(p, e) || GameOver){
             obstacle1.speed = 0;
             GameOver = true;
             DrawText("Game Over", window_width/2 - (MeasureText("Game Over", 50)/2), 100, 50, RED);
+        }
+
+        if(GameOver && !deathAudioPlayed){
+            PlaySound(deathwav);
+            deathAudioPlayed = true;
+        }
+        if(player.playJumpWav){
+            PlaySound(jumpwav);
+            player.playJumpWav = false;
         }
 
         player.update();
@@ -130,6 +151,13 @@ int main()
 
         EndDrawing();
     }
+
+    UnloadSound(jumpwav);
+    UnloadSound(deathwav);
+
+    CloseAudioDevice();
+
+    CloseWindow();
 
     return 0;
 }
